@@ -315,6 +315,8 @@ CREATE TABLE auth.roles (
 -- Tabla de permisos usando el CÓDIGO como PRIMARY KEY
 CREATE TABLE auth.permissions (
     id TEXT PRIMARY KEY CHECK (id = UPPER(id)),
+    module TEXT NOT NULL,
+    level TEXT NOT NULL,
     name TEXT NOT NULL,
     description TEXT NOT NULL,
     active BOOLEAN DEFAULT true

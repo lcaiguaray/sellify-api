@@ -16,6 +16,12 @@ public class Permission {
     private String id;
 
     @Column(nullable = false)
+    private String module;
+
+    @Column(nullable = false)
+    private String level;
+
+    @Column(nullable = false)
     private String name;
 
     @Column(nullable = false)

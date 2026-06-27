@@ -47,39 +47,57 @@ on conflict do nothing;
 ------------------------------------------------------------
 -- PERMISSIONS
 ------------------------------------------------------------
-insert into auth.permissions (id, name, description) values
+insert into auth.permissions (id, module, level, name, description) values
 
 -- Lookup Group
-('LOOKUP_GROUP.READ', 'Grupos de Catálogos - Lectura', 'Permite ver y listar los grupos de catálogos o listas del sistema.'),
--- ('LOOKUP_GROUP.WRITE', 'Grupos de Catálogos - Escritura', 'Permite crear y editar la información de los grupos de catálogos.'),
--- ('LOOKUP_GROUP.MANAGE', 'Grupos de Catálogos - Administración', 'Permite administrar grupos de catálogos: habilitar, deshabilitar o eliminarlos.'),
+('LOOKUP_GROUP.READ', 'LOOKUP_GROUP', 'READ', 'Ver Grupos', 'Permite ver y listar los grupos de catálogos.'),
+('LOOKUP_GROUP.WRITE', 'LOOKUP_GROUP', 'WRITE', 'Gestionar Grupos', 'Permite crear y editar grupos de catálogos.'),
+('LOOKUP_GROUP.MANAGE', 'LOOKUP_GROUP', 'MANAGE', 'Administrar Grupos', 'Permite habilitar, deshabilitar o eliminar grupos.'),
 
 -- Lookup Value
-('LOOKUP_VALUE.READ', 'Valores de Catálogo - Lectura', 'Permite ver y listar los valores específicos dentro de un grupo de catálogo.'),
-('LOOKUP_VALUE.WRITE', 'Valores de Catálogo - Escritura', 'Permite agregar y editar los valores o elementos pertenecientes a un catálogo.'),
-('LOOKUP_VALUE.MANAGE', 'Valores de Catálogo - Administración', 'Permite administrar los valores de un catálogo: habilitar, deshabilitar, eliminar o cambiar su orden de visualización.'),
+('LOOKUP_VALUE.READ', 'LOOKUP_VALUE', 'READ', 'Ver Valores', 'Permite ver y listar los valores de un catálogo.'),
+('LOOKUP_VALUE.WRITE', 'LOOKUP_VALUE', 'WRITE', 'Gestionar Valores', 'Permite agregar y editar valores de catálogo.'),
+('LOOKUP_VALUE.MANAGE', 'LOOKUP_VALUE', 'MANAGE', 'Administrar Valores', 'Permite habilitar, deshabilitar, eliminar o reordenar valores.'),
 
--- User
-('USER.READ', 'Usuarios - Lectura', 'Permite ver y listar usuarios del sistema.'),
-('USER.WRITE', 'Usuarios - Escritura', 'Permite crear y editar información de usuarios.'),
-('USER.MANAGE', 'Usuarios - Administración', 'Permite administrar usuarios: habilitar, deshabilitar, eliminar o restablecer credenciales.'),
+-- Users
+('USER.READ', 'USER', 'READ', 'Ver Usuarios', 'Permite ver y listar usuarios.'),
+('USER.WRITE', 'USER', 'WRITE', 'Gestionar Usuarios', 'Permite crear y editar usuarios.'),
+('USER.MANAGE', 'USER', 'MANAGE', 'Administrar Usuarios', 'Permite habilitar, deshabilitar, eliminar o restablecer credenciales.'),
 
--- Role
-('ROLE.READ', 'Roles - Lectura', 'Permite ver y listar roles del sistema.'),
-('ROLE.WRITE', 'Roles - Escritura', 'Permite crear y editar roles.'),
-('ROLE.MANAGE', 'Roles - Administración', 'Permite administrar roles: habilitar, deshabilitar, eliminar y asignar permisos.'),
+-- Roles
+('ROLE.READ', 'ROLE', 'READ', 'Ver Roles', 'Permite ver y listar roles.'),
+('ROLE.WRITE', 'ROLE', 'WRITE', 'Gestionar Roles', 'Permite crear y editar roles.'),
+('ROLE.MANAGE', 'ROLE', 'MANAGE', 'Administrar Roles', 'Permite habilitar, deshabilitar, eliminar y asignar permisos.'),
+
+-- Customers
+('CUSTOMERS.READ', 'CUSTOMERS', 'READ', 'Ver Clientes', 'Permite ver y listar clientes.'),
+('CUSTOMERS.WRITE', 'CUSTOMERS', 'WRITE', 'Gestionar Clientes', 'Permite crear y editar clientes.'),
+('CUSTOMERS.MANAGE', 'CUSTOMERS', 'MANAGE', 'Administrar Clientes', 'Permite habilitar, deshabilitar o eliminar clientes.'),
 
 -- Products
-('PRODUCTS.READ', 'Productos - Lectura', 'Permite ver y listar productos.'),
-('PRODUCTS.WRITE', 'Productos - Escritura', 'Permite crear y editar productos.'),
-('PRODUCTS.MANAGE', 'Productos - Administración', 'Permite administrar productos: publicar, despublicar o realizar acciones sensibles.'),
+('PRODUCTS.READ', 'PRODUCTS', 'READ', 'Ver Productos', 'Permite ver y listar productos.'),
+('PRODUCTS.WRITE', 'PRODUCTS', 'WRITE', 'Gestionar Productos', 'Permite crear y editar productos.'),
+('PRODUCTS.MANAGE', 'PRODUCTS', 'MANAGE', 'Administrar Productos', 'Permite publicar, despublicar o realizar acciones sensibles.'),
 
 -- Orders
-('ORDERS.READ', 'Órdenes - Lectura', 'Permite ver y listar órdenes.'),
-('ORDERS.MANAGE', 'Órdenes - Administración', 'Permite administrar órdenes: cancelar, cerrar o forzar cambios de estado.'),
+('ORDERS.READ', 'ORDERS', 'READ', 'Ver Órdenes', 'Permite ver y listar órdenes.'),
+('ORDERS.WRITE', 'ORDERS', 'WRITE', 'Gestionar Órdenes', 'Permite crear y editar órdenes.'),
+('ORDERS.MANAGE', 'ORDERS', 'MANAGE', 'Administrar Órdenes', 'Permite cancelar, cerrar o forzar cambios de estado.'),
 
--- Settings
-('SETTINGS.MANAGE', 'Configuración - Administración', 'Permite administrar la configuración general del sistema.')
+-- Reports
+('REPORTS.READ', 'REPORTS', 'READ', 'Ver Reportes', 'Permite ver y exportar reportes.'),
+('REPORTS.MANAGE', 'REPORTS', 'MANAGE', 'Administrar Reportes', 'Permite crear, programar y eliminar reportes.'),
+
+-- Brand
+('BRAND.READ', 'BRAND', 'READ', 'Ver Marcas', 'Permite ver y listar marcas.'),
+('BRAND.WRITE', 'BRAND', 'WRITE', 'Gestionar Marcas', 'Permite crear y editar marcas.'),
+('BRAND.MANAGE', 'BRAND', 'MANAGE', 'Administrar Marcas', 'Permite habilitar, deshabilitar o eliminar marcas.'),
+
+-- Category
+('CATEGORY.READ', 'CATEGORY', 'READ', 'Ver Categorías', 'Permite ver y listar categorías.'),
+('CATEGORY.WRITE', 'CATEGORY', 'WRITE', 'Gestionar Categorías', 'Permite crear y editar categorías.'),
+('CATEGORY.MANAGE', 'CATEGORY', 'MANAGE', 'Administrar Categorías', 'Permite habilitar, deshabilitar o eliminar categorías.')
+
 on conflict do nothing;
 
 ------------------------------------------------------------
@@ -253,8 +271,7 @@ on conflict do nothing;
 insert into auth.role_permissions (role_id, permission_id)
 select r.id, p.id
 from auth.roles r
-join auth.permissions p
-  ON p.id != 'SETTINGS.MANAGE'
+join auth.permissions p ON TRUE
 where r.name = 'Administrator'
 on conflict do nothing;
 
