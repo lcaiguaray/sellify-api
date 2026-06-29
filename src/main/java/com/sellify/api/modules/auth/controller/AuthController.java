@@ -11,6 +11,7 @@ import com.sellify.api.modules.auth.dto.*;
 import com.sellify.api.modules.auth.service.AuthService;
 import com.sellify.api.security.config.JwtProperties;
 import com.sellify.api.security.domain.UserPrincipal;
+import com.sellify.api.security.jwt.JwtService;
 
 import jakarta.servlet.http.*;
 import jakarta.validation.Valid;
@@ -24,33 +25,20 @@ public class AuthController {
     private final AuthService authService;
     private final JwtProperties jwtProperties;
     private final MessageTranslator messageTranslator;
+    private final JwtService jwtService;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(
-        @Valid @RequestBody LoginRequest request,
-        HttpServletRequest httpRequest,
-        HttpServletResponse httpResponse
-    ) {
-        AuthTokenResponse authToken = authService.login(request, httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"));
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse) {
+        AuthTokenResponse authToken = authService.login(request, httpRequest.getRemoteAddr(),
+                httpRequest.getHeader("User-Agent"));
 
-        ResponseCookie accessCookie = ResponseCookie.from(jwtProperties.tokenName(), authToken.accessToken().token())
-            .httpOnly(true)
-            .secure(jwtProperties.secureCookie())
-            .path("/")
-            .maxAge(authToken.accessToken().expiresAt().getTime() - System.currentTimeMillis())
-            .sameSite("Lax")
-            .build();
-
-        ResponseCookie refreshCookie = ResponseCookie.from(jwtProperties.refreshTokenName(), authToken.refreshToken().token())
-            .httpOnly(true)
-            .secure(jwtProperties.secureCookie())
-            .path("/api/auth/refresh")
-            .maxAge(authToken.refreshToken().expiresAt().getTime() - System.currentTimeMillis())
-            .sameSite("Lax")
-            .build();
-
-        httpResponse.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
-        httpResponse.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+        jwtService.setCookieToken(httpResponse, authToken.accessToken().token(),
+                authToken.accessToken().expiresAt().getTime() - System.currentTimeMillis(), "/");
+        jwtService.setCookieRefreshToken(httpResponse, authToken.refreshToken().token(),
+                authToken.refreshToken().expiresAt().getTime() - System.currentTimeMillis(), "/api/auth/refresh");
 
         String message = messageTranslator.getMessage("success.auth.login");
         return ResponseEntity.ok(ApiResponse.success(authToken.authResponse(), message));
@@ -58,9 +46,8 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(
-        HttpServletRequest request,
-        HttpServletResponse response
-    ) {
+            HttpServletRequest request,
+            HttpServletResponse response) {
         String refreshToken = null;
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
@@ -76,24 +63,17 @@ public class AuthController {
         }
 
         JwtToken newAccessToken = authService.refreshAccessToken(refreshToken);
-        ResponseCookie newAccessCookie = ResponseCookie.from(jwtProperties.tokenName(), newAccessToken.token())
-            .httpOnly(true)
-            .secure(jwtProperties.secureCookie())
-            .path("/")
-            .maxAge(newAccessToken.expiresAt().getTime() - System.currentTimeMillis())
-            .sameSite("Lax")
-            .build();
+        jwtService.setCookieToken(response, newAccessToken.token(),
+                newAccessToken.expiresAt().getTime() - System.currentTimeMillis(), "/");
 
-        response.addHeader(HttpHeaders.SET_COOKIE, newAccessCookie.toString());
         String message = messageTranslator.getMessage("success.auth.refresh");
         return ResponseEntity.ok(ApiResponse.success(null, message));
     }
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(
-        HttpServletRequest request,
-        HttpServletResponse response
-    ) {
+            HttpServletRequest request,
+            HttpServletResponse response) {
         String refreshToken = null;
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
@@ -106,14 +86,8 @@ public class AuthController {
 
         authService.logout(refreshToken);
 
-        ResponseCookie deleteAccessCookie = ResponseCookie.from(jwtProperties.tokenName(), "")
-            .httpOnly(true).secure(jwtProperties.secureCookie()).path("/").maxAge(0).build();
-                
-        ResponseCookie deleteRefreshCookie = ResponseCookie.from(jwtProperties.refreshTokenName(), "")
-            .httpOnly(true).secure(jwtProperties.secureCookie()).path("/api/auth/refresh").maxAge(0).build();
-
-        response.addHeader(HttpHeaders.SET_COOKIE, deleteAccessCookie.toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, deleteRefreshCookie.toString());
+        jwtService.setCookieToken(response, "", 0L, "/");
+        jwtService.setCookieRefreshToken(response, "", 0L, "/api/auth/refresh");
 
         String message = messageTranslator.getMessage("success.auth.logout");
         return ResponseEntity.ok(ApiResponse.success(null, message));
@@ -121,8 +95,7 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(
-        @AuthenticationPrincipal UserPrincipal principal
-    ) {
+            @AuthenticationPrincipal UserPrincipal principal) {
         AuthResponse userAuth = authService.me(principal.userId(), principal.companyId(), principal.roleId());
         String message = messageTranslator.getMessage("success.found");
         return ResponseEntity.ok(ApiResponse.success(userAuth, message));

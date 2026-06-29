@@ -2,6 +2,7 @@ package com.sellify.api.common.auditing;
 
 import com.sellify.api.security.domain.UserPrincipal;
 import org.springframework.data.domain.AuditorAware;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -16,9 +17,9 @@ public class SpringSecurityAuditorAware implements AuditorAware<UUID> {
     public Optional<UUID> getCurrentAuditor() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication == null || 
-            !authentication.isAuthenticated() || 
-            authentication.getPrincipal().equals("anonymousUser")) {
+        if (authentication == null ||
+                !authentication.isAuthenticated() ||
+                authentication instanceof AnonymousAuthenticationToken) {
             return Optional.empty();
         }
 

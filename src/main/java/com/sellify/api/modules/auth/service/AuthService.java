@@ -30,6 +30,7 @@ import com.sellify.api.modules.core.mapper.CompanyMapper;
 import com.sellify.api.modules.core.service.CompanyService;
 import com.sellify.api.security.jwt.JwtService;
 
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -123,8 +124,9 @@ public class AuthService {
             throw new BusinessException(HttpStatus.UNAUTHORIZED, "error.auth.token.expired");
         }
 
+        Claims claims = jwtService.extractAllClaims(refreshToken);
         User user = userService.requireById(session.getUserId());
-        UUID roleId = jwtService.extractRoleId(refreshToken);
+        UUID roleId = jwtService.extractRoleId(claims);
         return jwtService.generateAccessToken(user, session.getCompanyId(), roleId);
     }
 

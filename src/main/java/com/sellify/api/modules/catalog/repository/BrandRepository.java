@@ -15,6 +15,8 @@ public interface BrandRepository
 
     Optional<Brand> findByIdAndCompanyIdAndActiveTrue(UUID id, UUID companyId);
 
+    Optional<Brand> findByIdAndCompanyId(UUID id, UUID companyId);
+
     boolean existsBySlugAndCompanyId(String slug, UUID companyId);
     
 }

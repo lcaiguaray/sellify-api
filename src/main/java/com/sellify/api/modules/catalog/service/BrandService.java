@@ -64,6 +64,12 @@ public class BrandService {
             .orElseThrow(() -> new NotFoundException("error.brand.notfound"));
     }
 
+    @Transactional(readOnly = true)
+    public Brand requireByIdAndCompany(UUID id, UUID companyId) {
+        return brandRepository.findByIdAndCompanyId(id, companyId)
+            .orElseThrow(() -> new NotFoundException("error.brand.notfound"));
+    }
+
     @Transactional
     public Brand create(UUID companyId, BrandRequest request) {
         if (brandRepository.existsBySlugAndCompanyId(request.slug(), companyId)) {
@@ -81,7 +87,7 @@ public class BrandService {
 
     @Transactional
     public Brand update(UUID id, UUID companyId, BrandRequest request) {
-        Brand brand = requireActiveByIdAndCompany(id, companyId);
+        Brand brand = requireByIdAndCompany(id, companyId);
         brand.setName(request.name());
         brand.setSlug(request.slug());
         brand.setDescription(request.description());
@@ -90,7 +96,7 @@ public class BrandService {
 
     @Transactional
     public void setActive(UUID id, UUID companyId, boolean active) {
-        Brand brand = requireActiveByIdAndCompany(id, companyId);
+        Brand brand = requireByIdAndCompany(id, companyId);
         brand.setActive(active);
     }
 

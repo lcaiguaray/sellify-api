@@ -12,6 +12,8 @@ import java.util.stream.Collectors;
 
 import javax.crypto.SecretKey;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 import com.sellify.api.modules.auth.domain.User;
 import com.sellify.api.modules.auth.dto.JwtToken;
 import com.sellify.api.modules.auth.repository.RoleRepository;
+import com.sellify.api.modules.auth.repository.UserRepository;
 import com.sellify.api.security.config.JwtProperties;
 import com.sellify.api.security.domain.UserPrincipal;
 
@@ -28,6 +31,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -36,18 +40,19 @@ public class JwtService {
 
     private final JwtProperties jwtProperties;
     private final RoleRepository roleRepository;
+    private final UserRepository userRepository;
 
     public JwtToken buildToken(User user, Map<String, Object> extraClaims, long expirationSeconds) {
         Date issuedAt = new Date(System.currentTimeMillis());
         Date expiration = new Date(issuedAt.getTime() + expirationSeconds * 1000L);
 
         String token = Jwts.builder()
-            .claims(extraClaims)
-            .subject(user.getId().toString())
-            .issuedAt(issuedAt)
-            .expiration(expiration)
-            .signWith(getSignInKey())
-            .compact();
+                .claims(extraClaims)
+                .subject(user.getId().toString())
+                .issuedAt(issuedAt)
+                .expiration(expiration)
+                .signWith(getSignInKey())
+                .compact();
 
         return new JwtToken(token, issuedAt, expiration);
     }
@@ -58,7 +63,7 @@ public class JwtService {
         if (roleId != null) {
             extraClaims.put(jwtProperties.claims().roleId(), roleId);
         }
-        
+
         return buildToken(user, extraClaims, jwtProperties.expiration());
     }
 
@@ -81,42 +86,78 @@ public class JwtService {
         }
     }
 
-    public UUID extractRoleId(String token) {
-        try {
-            Claims claims = Jwts.parser()
+    public Claims extractAllClaims(String token) {
+        return Jwts.parser()
                 .verifyWith(getSignInKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-
-            return Optional.ofNullable(claims.get(jwtProperties.claims().roleId()))
-                .map(Object::toString)
-                .map(UUID::fromString)
-                .orElse(null);
-        } catch (Exception e) {
-            return null;
-        }
     }
 
-    public Authentication getAuthentication(String token) {
-        Claims claims = Jwts.parser().verifyWith(getSignInKey()).build().parseSignedClaims(token).getPayload();
+    public UUID extractRoleId(Claims claims) {
+        return UUID.fromString(claims.get(jwtProperties.claims().roleId(), String.class));
+    }
 
-        UUID roleId = extractRoleId(token);
-        List<String> permissionIds = (roleId != null) 
-            ? roleRepository.findPermissionIdsByRoleId(roleId).stream().collect(Collectors.toList())
-            : Collections.emptyList();
-        
-        Collection<GrantedAuthority> authorities = permissionIds.stream()
-            .map(SimpleGrantedAuthority::new)
-            .collect(Collectors.toList());
+    public Date extractExpiration(Claims claims) {
+        return claims.getExpiration();
+    }
 
-        UUID userId = UUID.fromString(claims.getSubject());
+    public UUID extractSubject(Claims claims) {
+        return UUID.fromString(claims.getSubject());
+    }
+
+    public Authentication getAuthentication(Claims claims) {
+        UUID userId = extractSubject(claims);
+        UUID roleId = extractRoleId(claims);
         UUID companyId = UUID.fromString(claims.get(jwtProperties.claims().companyId(), String.class));
+
+        List<String> permissionIds = (roleId != null)
+                ? roleRepository.findPermissionIdsByRoleId(roleId).stream().collect(Collectors.toList())
+                : Collections.emptyList();
+
+        Collection<GrantedAuthority> authorities = permissionIds.stream()
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
+
         return new UsernamePasswordAuthenticationToken(new UserPrincipal(userId, companyId, roleId), null, authorities);
     }
 
     public Date extractExpiration(String token) {
         return Jwts.parser().verifyWith(getSignInKey()).build().parseSignedClaims(token).getPayload().getExpiration();
+    }
+
+    public boolean existsSubject(UUID userId) {
+        return userRepository.existsById(userId);
+    }
+
+    public void setCookieToken(
+            HttpServletResponse response,
+            String token,
+            Long maxAge,
+            String path) {
+        ResponseCookie cookie = ResponseCookie.from(jwtProperties.tokenName(), token != null ? token : "")
+                .maxAge(maxAge != null ? maxAge : 0)
+                .path(path != null ? path : "/")
+                .httpOnly(true)
+                .secure(jwtProperties.secureCookie())
+                .sameSite("Lax")
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    public void setCookieRefreshToken(
+            HttpServletResponse response,
+            String token,
+            Long maxAge,
+            String path) {
+        ResponseCookie cookie = ResponseCookie.from(jwtProperties.refreshTokenName(), token != null ? token : "")
+                .maxAge(maxAge != null ? maxAge : 0)
+                .path(path != null ? path : "/")
+                .httpOnly(true)
+                .secure(jwtProperties.secureCookie())
+                .sameSite("Lax")
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
     private SecretKey getSignInKey() {
